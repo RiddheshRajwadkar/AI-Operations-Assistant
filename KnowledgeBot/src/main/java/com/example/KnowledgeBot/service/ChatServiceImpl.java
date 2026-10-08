@@ -1,21 +1,30 @@
 package com.example.KnowledgeBot.service;
 
 import com.example.KnowledgeBot.dto.ChatRequest;
+import org.springframework.ai.chat.client.ChatClient;
+//import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
 
 @Service
 public class ChatServiceImpl implements ChatService{
 
-    private final ChatModel chatModel;
+//    private final ChatModel chatModel;
+    private final ChatClient chatClient;
 
-    public ChatServiceImpl(ChatModel chatModel) {
-        this.chatModel = chatModel;
+    public ChatServiceImpl(ChatClient chatClient) {
+//        this.chatModel = chatModel;
+        this.chatClient = chatClient;
     }
 
     @Override
     public String generateResponse(ChatRequest chatRequest) {
-        return chatModel.call(chatRequest.message());
+        String conversationId = chatRequest.chatId() != null ? chatRequest.chatId() : "default-user";
+        return chatClient.prompt()
+                .user(chatRequest.message())
+                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, conversationId))
+                .call()
+                .content();
     }
 }
